@@ -1,0 +1,36 @@
+{
+  "name": "distributed-corn-jobs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:pull": "drizzle-kit pull",
+    "db:drop": "drizzle-kit drop",
+    "db:studio": "drizzle-kit studio",
+    "db:check": "drizzle-kit check",
+    "db:up": "drizzle-kit up"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "pg": "^8.20.0",
+    "rate-limit-redis": "^4.3.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "nodemon": "^3.1.14"
+  }
+}

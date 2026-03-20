@@ -1,0 +1,45 @@
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:18.3-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - distributed-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  redis:
+    container_name: redis
+    image: redis:8.4-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data         
+    networks:
+      - distributed-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  distributed-network:
+    driver: bridge
