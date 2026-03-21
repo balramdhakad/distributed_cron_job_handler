@@ -8,7 +8,7 @@ import {
   jsonb,
   varchar,
 } from "drizzle-orm/pg-core";
-import { uuidv7 } from "./helper";
+import { uuidv7 } from "./helper.js";
 import { sql } from "drizzle-orm";
 
 export const Jobs = pgTable(
@@ -56,5 +56,12 @@ export const Jobs = pgTable(
 
     //get job by name
     index("idx_jobs_name").on(table.name),
+
+    // pg_trgm indexes for fuzzy search on name and handlerType
+    index("idx_jobs_name_trgm").using("gin", table.name.op("gin_trgm_ops")),
+    index("idx_jobs_handler_type_trgm").using(
+      "gin",
+      table.handlerType.op("gin_trgm_ops"),
+    ),
   ],
 );

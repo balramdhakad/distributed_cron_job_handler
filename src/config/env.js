@@ -41,8 +41,9 @@ const jobSechdularConfig = {
     : 30000,
 
   jobLockTTL: process.env.JOB_LOCK_TTL_MS
-    ? toNumber("JOB_LOCK_TTL_MS", process.env.POLL_INTERVAL_MS)
+    ? toNumber("JOB_LOCK_TTL_MS", process.env.JOB_LOCK_TTL_MS)
     : 300000,
+  prefix: process.env.PRIFIX || "distrutedCron",
 };
 
 const env = {

@@ -32,4 +32,6 @@ CREATE INDEX "idx_executions_status" ON "job_executions" USING btree ("status");
 CREATE INDEX "idx_executions_started_at" ON "job_executions" USING btree ("started_at") WHERE "job_executions"."status" = 'running';--> statement-breakpoint
 CREATE INDEX "idx_executions_job_id_started_at" ON "job_executions" USING btree ("job_id","started_at");--> statement-breakpoint
 CREATE INDEX "index_to_fetch_next_run_at" ON "jobs" USING btree ("next_run_at") WHERE "jobs"."is_active" = true;--> statement-breakpoint
-CREATE INDEX "idx_jobs_name" ON "jobs" USING btree ("name");
+CREATE INDEX "idx_jobs_name" ON "jobs" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "idx_jobs_name_trgm" ON "jobs" USING gin ("name" gin_trgm_ops);--> statement-breakpoint
+CREATE INDEX "idx_jobs_handler_type_trgm" ON "jobs" USING gin ("handler_type" gin_trgm_ops);

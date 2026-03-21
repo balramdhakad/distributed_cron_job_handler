@@ -16,8 +16,8 @@ export class BadRequestError extends AppError {
 }
 
 export class ValidationError extends AppError {
-    constructor(message = 'validation Error',details = null){
-        super(message,404,'VALIDATION_ERROR')
+    constructor(message = 'Validation failed', details = null){
+        super(message, 422, 'VALIDATION_ERROR', details)
     }
 }
 export class NotFoundError extends AppError {

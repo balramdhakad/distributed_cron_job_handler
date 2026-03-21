@@ -1,5 +1,5 @@
 {
-  "id": "80f29d9f-91eb-4954-af4d-39fc7fde7e3d",
+  "id": "022427d5-bd56-4f6d-bcaa-8ebb8b43ab7d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -279,6 +279,38 @@
           "isUnique": false,
           "concurrently": false,
           "method": "btree",
+          "with": {}
+        },
+        "idx_jobs_name_trgm": {
+          "name": "idx_jobs_name_trgm",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "gin_trgm_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "idx_jobs_handler_type_trgm": {
+          "name": "idx_jobs_handler_type_trgm",
+          "columns": [
+            {
+              "expression": "handler_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "gin_trgm_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
           "with": {}
         }
       },

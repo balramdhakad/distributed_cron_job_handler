@@ -1,7 +1,8 @@
 export function sendResponse(res, { data, message, statusCode = 200 }) {
   const response = { success: true };
-  if (message) response.message;
-  if (data) response.data;
+  console.log(data)
+  if (message) response.message = message;
+  if (data) response.data = data;
   return res.status(statusCode).json(response);
 }
 

@@ -1,5 +1,5 @@
 import {
-    index,
+  index,
   integer,
   pgTable,
   text,
@@ -10,13 +10,14 @@ import {
 import { uuidv7 } from "./helper.js";
 import { Jobs } from "./jobSchema.js";
 import { sql } from "drizzle-orm";
+import { jobExecutionStatusEnum } from "./enum.js";
 
 export const jobExexutions = pgTable(
   "job_executions",
   {
     id: uuidv7(),
     jobId: uuid("job_id").references(() => Jobs.id, { onDelete: "cascade" }),
-    status: varchar("status", { length: 20 }).notNull().default("running"),
+    status: jobExecutionStatusEnum("job_status").notNull().default("running"),
 
     sechduedAt: timestamp("sechdued_at"),
     startedAt: timestamp("started_at")

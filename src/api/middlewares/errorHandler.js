@@ -16,7 +16,7 @@ export const errorHandler = (err, req, res, next) => {
       isProduction && !isOperational
         ? "Something went wrong"
         : err.message || "internal server error",
-    code: err.errorCode || "INTERNAL_SERVER_ERROR",
+    code: err.code || "INTERNAL_SERVER_ERROR",
     timestamp: new Date().toISOString(),
   };
 

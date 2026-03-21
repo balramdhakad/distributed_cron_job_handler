@@ -13,5 +13,5 @@ router.get("/:id", jobControllers.getSingleList);
 
 router.delete("/:id", jobControllers.deleteJob);
 
-router.delete("/:id", jobControllers.getJobsExecutionHistory);
+router.get("/:id/history", jobControllers.getJobsExecutionHistory);
 export default router;
