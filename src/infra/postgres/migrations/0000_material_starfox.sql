@@ -1,8 +1,8 @@
 CREATE TABLE "job_executions" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"job_id" uuid,
-	"status" varchar(20) DEFAULT 'running' NOT NULL,
-	"sechdued_at" timestamp,
+	"job_status" varchar(20) DEFAULT 'running' NOT NULL,
+	"schedule_at" timestamp,
 	"started_at" timestamp DEFAULT now() NOT NULL,
 	"finished_at" timestamp,
 	"error_message" text,
@@ -19,7 +19,7 @@ CREATE TABLE "jobs" (
 	"handler_config" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL,
 	"max_retry" integer DEFAULT 3 NOT NULL,
-	"max_time_run" integer DEFAULT 1 NOT NULL,
+	"max_time_run" integer,
 	"run_count" integer DEFAULT 0 NOT NULL,
 	"next_run_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -27,9 +27,10 @@ CREATE TABLE "jobs" (
 );
 --> statement-breakpoint
 ALTER TABLE "job_executions" ADD CONSTRAINT "job_executions_job_id_jobs_id_fk" FOREIGN KEY ("job_id") REFERENCES "public"."jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "uq_executions_job_id_schedule_at" ON "job_executions" USING btree ("job_id","schedule_at") WHERE "job_executions"."schedule_at" IS NOT NULL;--> statement-breakpoint
 CREATE INDEX "idx_executions_job_id" ON "job_executions" USING btree ("job_id");--> statement-breakpoint
-CREATE INDEX "idx_executions_status" ON "job_executions" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "idx_executions_started_at" ON "job_executions" USING btree ("started_at") WHERE "job_executions"."status" = 'running';--> statement-breakpoint
+CREATE INDEX "idx_executions_status" ON "job_executions" USING btree ("job_status");--> statement-breakpoint
+CREATE INDEX "idx_executions_started_at" ON "job_executions" USING btree ("started_at") WHERE "job_executions"."job_status"::text = 'running';--> statement-breakpoint
 CREATE INDEX "idx_executions_job_id_started_at" ON "job_executions" USING btree ("job_id","started_at");--> statement-breakpoint
 CREATE INDEX "index_to_fetch_next_run_at" ON "jobs" USING btree ("next_run_at") WHERE "jobs"."is_active" = true;--> statement-breakpoint
 CREATE INDEX "idx_jobs_name" ON "jobs" USING btree ("name");--> statement-breakpoint

@@ -2,27 +2,30 @@ import { db } from "../infra/postgres/index.js";
 import { logger } from "../infra/logger.js";
 import { processingQueue } from "../infra/redis/queue.js";
 import { getNextRunAt } from "../utils/cronJob.js";
-import { updateNextRunAt } from "./query.js";
+import { updateNextRunAt } from "./query.repositories.js";
 import { acquireLock, releaseLock } from "./redisLock.js";
-
-//flow job nextRun at will be updated and enqueue job to queue and releaseLock
-//if some operation failed then release lock don't updateNextRun or enqueue
-// let other sechdular or sechdular on next time pick the job
 
 export const enqueueJob = async (job) => {
   const lock = await acquireLock(job.id);
+
   if (!lock) return;
 
   try {
-    const nextRunAt = getNextRunAt(job.cronExpression, job.timezone);
+    const nextRunAt = getNextRunAt(
+      job.cronExpression,
+      job.timezone,
+      job.nextRunAt,
+    );
 
+    //just update the query nextRunAt and enqueue to queue if everything is correct then remove lock
+    // if failed don't update the nextRunAt and don't enqueue it
     await db.transaction(async (tx) => {
       await updateNextRunAt(tx, job.id, nextRunAt);
-    
 
+      const schduledAt = new Date(job.nextRunAt);
       await processingQueue.add(
         job.name,
-        { job },
+        { job, schduledAt },
         {
           jobId: `${job.id}-${nextRunAt.getTime()}`,
           attempts: job.maxRetry + 1,
@@ -39,6 +42,12 @@ export const enqueueJob = async (job) => {
       `Scheduler Failed to enqueue job "${job.name}": ${err.message}`,
     );
   } finally {
-    await releaseLock(lock);
+    try {
+      await releaseLock(lock);
+    } catch (lockErr) {
+      logger.error(
+        `Scheduler failed to release lock for job "${job.name}": ${lockErr.message}`,
+      );
+    }
   }
 };

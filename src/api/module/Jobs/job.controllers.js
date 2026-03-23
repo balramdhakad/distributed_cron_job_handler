@@ -6,11 +6,17 @@ import {
 import { asyncHandler } from "../../middlewares/asyncHandler.js";
 import { validate } from "../../middlewares/handlerValidation.js";
 import jobServices from "./job.services.js";
-import jobSchemaValidation, { validateHandlerConfig } from "./job.validator.js";
+import jobSchemaValidation, {
+  jobIdSchema,
+  validateHandlerConfig,
+} from "./job.validator.js";
 
 const createJob = asyncHandler(async (req, res) => {
   const data = await validate(jobSchemaValidation.createJobSchema, req.body);
 
+  //validator Config validation
+  //to add new job with handler it's that their hander and their validation should
+  //already in registry
   await validateHandlerConfig(data.handlerType, data.handlerConfig);
 
   const result = await jobServices.createJob(db, data);
@@ -58,6 +64,19 @@ const updateJob = asyncHandler(async (req, res) => {
   sendResponse(res, { message: "Job updated successfully", data: result });
 });
 
+const toggleJob = asyncHandler(async (req, res) => {
+  const { id, isActive } = await validate(jobSchemaValidation.toggleJobSchema, {
+    ...req.body,
+    id: req.params.id,
+  });
+
+  const result = await jobServices.toggleJob(db, id, isActive);
+  sendResponse(res, {
+    message: `Job ${isActive ? "activated" : "deactivated"} successfully`,
+    data: result,
+  });
+});
+
 const deleteJob = asyncHandler(async (req, res) => {
   const { id } = await validate(jobIdSchema, req.params);
 
@@ -67,22 +86,24 @@ const deleteJob = asyncHandler(async (req, res) => {
 });
 
 const getJobsExecutionHistory = asyncHandler(async (req, res) => {
-  //validation
   const { id, ...query } = await validate(
     jobSchemaValidation.getExecutionHistoryQuerySchema,
     { ...req.query, id: req.params.id },
   );
 
-  //service Call
-  const { executions, total, page, limit } =
-    await jobServices.getJobExecutionHistory(db, id, query);
+  const { data, pagination } = await jobServices.getJobExecutionHistory(
+    db,
+    id,
+    query,
+  );
 
-  sendPaginatedResponce(res, executions, { total, page, limit });
+  sendPaginatedResponce(res, data, pagination);
 });
 
 const jobControllers = {
   createJob,
   updateJob,
+  toggleJob,
   deleteJob,
   getAllJobsList,
   getSingleList,

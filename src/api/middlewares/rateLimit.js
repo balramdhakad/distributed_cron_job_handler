@@ -1,7 +1,7 @@
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
-import { RateLimitError } from "../utils/errors.js";
-import { redis } from "../infrastructure/redis.js";
+import { RateLimitError } from "../../utils/errors.js";
+import { redis } from "../../infra/redis/index.js";
 
 export const globalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

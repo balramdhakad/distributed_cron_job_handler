@@ -11,8 +11,7 @@ const logHandler = async (config) => {
   if (!config?.message) {
     throw new NonRetryableError('log handler requires config.message');
   }
-
-  return { logged: config.message, at: new Date().toISOString() };
+  return { logged: config.message, at: new Date() };
 };
 
 export default logHandler;

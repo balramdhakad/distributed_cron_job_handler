@@ -1,6 +1,7 @@
 import z from "zod/v4";
 import { isValidCron } from "../../../utils/cronJob.js";
-import { hasHandler, listHandlers, getSchema } from "../../../jobs/registry.js";
+import { hasHandler, listHandlers, getSchema } from "../../../infra/registry.js";
+import { ValidationError } from "../../../utils/errors.js";
 
 export const validateHandlerConfig = async (handlerType, config) => {
   const schema = getSchema(handlerType);
@@ -10,8 +11,8 @@ export const validateHandlerConfig = async (handlerType, config) => {
   const result = await schema.safeParse(config);
 
   if (!result.success) {
-    // const message = result.error.errors.map((e) => e.message).join("; ");
-    throw new ValidationError(message || "validation");
+    const fieldErrors = result.error.flatten().fieldErrors;
+    throw new ValidationError("Invalid handlerConfig", fieldErrors);
   }
 
   return result.data;
@@ -81,15 +82,6 @@ export const updateJobSchema = z
   .object({
     id: z.uuid("Invalid job id"),
 
-    name: z
-      .string()
-      .min(1)
-      .max(255)
-      .refine((v) => v.trim().length >= 2, {
-        message: "name must be of atleast 2 char",
-      })
-      .optional(),
-
     cronExpression: cronSchema.optional(),
 
     timezone: timezoneSchema.optional(),
@@ -97,8 +89,6 @@ export const updateJobSchema = z
     handlerType: handlerTypeSchema.optional(),
 
     handlerConfig: z.record(z.string(), z.unknown()).optional(),
-
-    isActive: z.boolean().optional(),
 
     maxRetry: z
       .int()
@@ -111,10 +101,9 @@ export const updateJobSchema = z
       .nullable()
       .optional(),
   })
-  .refine(
-    (data) => Object.keys(data).filter((k) => k !== "id").length > 0,
-    { message: "At least one field must be provided to update" },
-  );
+  .refine((data) => Object.keys(data).filter((k) => k !== "id").length > 0, {
+    message: "At least one field must be provided to update",
+  });
 
 //get all jobs by pagination
 export const getAllJobsQuerySchema = z.object({
@@ -132,12 +121,19 @@ export const jobIdSchema = z.object({
   id: z.uuid("Invalid job id"),
 });
 
+export const toggleJobSchema = z.object({
+  id: z.uuid("Invalid job id"),
+  isActive: z.boolean({ required_error: "isActive is required" }),
+});
+
 //get Execution History Schema
 export const getExecutionHistoryQuerySchema = z.object({
   id: z.uuid("Invalid job id"),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
-  status: z.enum(["running", "retrying", "success", "failed", "timeout"]).optional(),
+  status: z
+    .enum(["running", "retrying", "success", "failed", "timeout"])
+    .optional(),
 });
 
 const jobSchemaValidation = {
@@ -145,6 +141,7 @@ const jobSchemaValidation = {
   updateJobSchema,
   getAllJobsQuerySchema,
   getExecutionHistoryQuerySchema,
+  toggleJobSchema,
 };
 
 export default jobSchemaValidation;

@@ -11,6 +11,7 @@ router.put("/:id", jobControllers.updateJob);
 
 router.get("/:id", jobControllers.getSingleList);
 
+router.patch("/:id/toggle", jobControllers.toggleJob);
 router.delete("/:id", jobControllers.deleteJob);
 
 router.get("/:id/history", jobControllers.getJobsExecutionHistory);

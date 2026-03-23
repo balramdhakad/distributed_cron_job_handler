@@ -1,20 +1,10 @@
 export function sendResponse(res, { data, message, statusCode = 200 }) {
   const response = { success: true };
-  console.log(data)
-  if (message) response.message = message;
-  if (data) response.data = data;
+  if (message !== undefined) response.message = message;
+  if (data !== undefined) response.data = data;
   return res.status(statusCode).json(response);
 }
 
-export function sendPaginatedResponce(res, data, { total, page, limit }) {
-  return res.status(200).json({
-    success: true,
-    data,
-    pagination: {
-      total,
-      page,
-      limit,
-      pages: Math.ceil(total / limit),
-    },
-  });
+export function sendPaginatedResponce(res, data, pagination) {
+  return res.status(200).json({ success: true, data, pagination });
 }

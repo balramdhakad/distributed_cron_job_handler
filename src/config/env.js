@@ -33,6 +33,7 @@ const redisConfig = {
   port: process.env.REDIS_PORT
     ? toNumber("REDIS_PORT", process.env.REDIS_PORT)
     : 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
 };
 
 const jobSechdularConfig = {
@@ -43,8 +44,13 @@ const jobSechdularConfig = {
   jobLockTTL: process.env.JOB_LOCK_TTL_MS
     ? toNumber("JOB_LOCK_TTL_MS", process.env.JOB_LOCK_TTL_MS)
     : 300000,
-  prefix: process.env.PRIFIX || "distrutedCron",
+  prefix: process.env.PREFIX || "distributedCron",
+  
+  maxJobsPerPool : process.env.MAX_JOBS_PER_POOL 
+    ? toNumber("MAX_JOBS_PER_POOL", process.env.MAX_JOBS_PER_POOL)
+    : 50,
 };
+
 
 const env = {
   serverConfig,

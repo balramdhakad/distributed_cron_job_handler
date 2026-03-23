@@ -4,7 +4,7 @@ import { logger } from "../logger.js";
 
 export const defaultRedisOptions = {
   host: env.redisConfig.host,
-  post: env.redisConfig.port,
+  port: env.redisConfig.port,
   password: env.redisConfig.password,
   retryStrategy(times) {
     const delay = Math.min(times * 100, 3000);
@@ -12,7 +12,6 @@ export const defaultRedisOptions = {
   },
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
-  lazyConnect: true,
 };
 
 export const redis = new Redis(defaultRedisOptions);
@@ -33,7 +32,8 @@ export const startRedis = async () => {
   try {
     await redis.connect();
   } catch (error) {
-    logger.error(`redis Connection Error : ${error}`);
+    logger.error(`Redis connection failed: ${error.message}`);
+    throw error;
   }
 };
 

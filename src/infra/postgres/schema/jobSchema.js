@@ -16,7 +16,7 @@ export const Jobs = pgTable(
   {
     id: uuidv7(),
     //name must be unique so no problem in monitering
-    name: varchar("name", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull().unique(),
 
     //time after or at time should run
     cronExpression: varchar("cron_expression", { length: 100 }).notNull(),
@@ -34,7 +34,7 @@ export const Jobs = pgTable(
     maxRetry: integer("max_retry").notNull().default(3),
 
     //no of times successful run job
-    maxTimeRun: integer("max_time_run").notNull().default(1),
+    maxRuns: integer("max_time_run"),
 
     runCount: integer("run_count").notNull().default(0),
 

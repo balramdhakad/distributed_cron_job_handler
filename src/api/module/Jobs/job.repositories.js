@@ -1,14 +1,16 @@
-import { sql, eq, and, desc, count, asc } from "drizzle-orm";
+import { sql, eq, and, desc, count } from "drizzle-orm";
 import { Jobs } from "../../../infra/postgres/schema/jobSchema.js";
 import { jobExexutions } from "../../../infra/postgres/schema/jobExecutionLog.js";
+import dbHandler from "../../../utils/dbWrapper.js";
 
 const isJobExistWithJobName = async (db, jobName) => {
-  const result = await db.execute(
-    sql`SELECT EXISTS (SELECT 1 FROM jobs WHERE name = ${jobName})`,
-  );
-  return result.rows[0].exists;
+  const [row] = await db
+    .select({ id: Jobs.id })
+    .from(Jobs)
+    .where(eq(Jobs.name, jobName))
+    .limit(1);
+  return !!row;
 };
-
 
 const createJob = async (db, jobData) => {
   const [job] = await db
@@ -21,7 +23,7 @@ const createJob = async (db, jobData) => {
       handlerConfig: jobData.handlerConfig ?? {},
       isActive: jobData.isActive ?? true,
       maxRetry: jobData.maxRetry ?? 3,
-      maxTimeRun: jobData.maxRuns ?? 1,
+      maxRuns: jobData.maxRuns ?? null,
       nextRunAt: jobData.nextRunAt ?? null,
     })
     .returning();
@@ -36,68 +38,41 @@ const listColumns = {
   handlerType: Jobs.handlerType,
   isActive: Jobs.isActive,
   maxRetry: Jobs.maxRetry,
-  maxTimeRun: Jobs.maxTimeRun,
+  maxRuns: Jobs.maxRuns,
   runCount: Jobs.runCount,
   nextRunAt: Jobs.nextRunAt,
   createdAt: Jobs.createdAt,
   updatedAt: Jobs.updatedAt,
 };
 
-//search and filter all jobs 
-const getAllJobsList = async (db, { page, limit, isActive, search }) => {
-  const offset = (page - 1) * limit;
+// plain list ordered by latest first
+const getAllJobsList = async (db, { where, limit, offset }) =>
+  db
+    .select(listColumns)
+    .from(Jobs)
+    .where(where)
+    .orderBy(desc(Jobs.createdAt))
+    .limit(limit)
+    .offset(offset);
+//if search is their
+const searchJobsList = async (db, { where, scoreExpr, limit, offset }) =>
+  db
+    .select({ ...listColumns, score: scoreExpr })
+    .from(Jobs)
+    .where(where)
+    .orderBy(desc(scoreExpr), desc(Jobs.createdAt))
+    .limit(limit)
+    .offset(offset);
 
-  const baseConditions = [];
-  if (isActive !== undefined) baseConditions.push(eq(Jobs.isActive, isActive));
-  const baseWhere =
-    baseConditions.length > 0 ? and(...baseConditions) : undefined;
-
-  if (search) {
-    const scoreExpr = sql`GREATEST(
-      similarity(${Jobs.name}, ${search}),
-      similarity(${Jobs.handlerType}, ${search})
-    )`;
-
-    const searchCondition = sql`(
-      ${Jobs.name} % ${search} OR ${Jobs.handlerType} % ${search}
-    )`;
-
-    const where = baseWhere ? and(baseWhere, searchCondition) : searchCondition;
-
-    const [jobs, totalResult] = await Promise.all([
-      db
-        .select({ ...listColumns, score: scoreExpr })
-        .from(Jobs)
-        .where(where)
-        .orderBy(desc(scoreExpr), desc(Jobs.createdAt))
-        .limit(limit)
-        .offset(offset),
-      db.select({ count: count() }).from(Jobs).where(where),
-    ]);
-
-    return { jobs, total: Number(totalResult[0].count) };
-  }
-
-  const [jobs, totalResult] = await Promise.all([
-    db
-      .select(listColumns)
-      .from(Jobs)
-      .where(baseWhere)
-      .orderBy(desc(Jobs.createdAt))
-      .limit(limit)
-      .offset(offset),
-    db.select({ count: count() }).from(Jobs).where(baseWhere),
-  ]);
-
-  return { jobs, total: Number(totalResult[0].count) };
+// total count for pagination
+const countJobs = async (db, { where }) => {
+  const [result] = await db.select({ count: count() }).from(Jobs).where(where);
+  return Number(result.count);
 };
 
+// find job by id
 const findById = async (db, id) => {
-  const [job] = await 
-  db.select()
-  .from(Jobs)
-  .where(eq(Jobs.id, id));
-
+  const [job] = await db.select().from(Jobs).where(eq(Jobs.id, id));
   return job ?? null;
 };
 
@@ -118,36 +93,37 @@ const deleteById = async (db, id) => {
   return job ?? null;
 };
 
+// executions for one job, latest first
+const findExecutionsByJobId = async (db, { where, limit, offset }) =>
+  db
+    .select()
+    .from(jobExexutions)
+    .where(where)
+    .orderBy(desc(jobExexutions.startedAt))
+    .limit(limit)
+    .offset(offset);
 
-const findExecutionsByJobId = async (db, jobId, { page, limit, status }) => {
-  const offset = (page - 1) * limit;
-
-  const conditions = [eq(jobExexutions.jobId, jobId)];
-  if (status) conditions.push(eq(jobExexutions.status, status));
-  const where = and(...conditions);
-
-  const [executions, totalResult] = await Promise.all([
-    db
-      .select()
-      .from(jobExexutions)
-      .where(where)
-      .orderBy(desc(jobExexutions.startedAt))
-      .limit(limit)
-      .offset(offset),
-    db.select({ count: count() }).from(jobExexutions).where(where),
-  ]);
-
-  return { executions, total: Number(totalResult[0].count) };
+// total count for execution history pagination
+const countExecutions = async (db, { where }) => {
+  const [result] = await db
+    .select({ count: count() })
+    .from(jobExexutions)
+    .where(where);
+  return Number(result.count);
 };
 
+//wraped all function under all Repositories or batter error handling
 const jobRepository = {
-  isJobExistWithJobName,
-  createJob,
-  getAllJobsList,
-  findById,
-  updateById,
-  deleteById,
-  findExecutionsByJobId,
+  isJobExistWithJobName: dbHandler(isJobExistWithJobName),
+  createJob: dbHandler(createJob),
+  getAllJobsList: dbHandler(getAllJobsList),
+  searchJobsList: dbHandler(searchJobsList),
+  countJobs: dbHandler(countJobs),
+  findById: dbHandler(findById),
+  updateById: dbHandler(updateById),
+  deleteById: dbHandler(deleteById),
+  findExecutionsByJobId: dbHandler(findExecutionsByJobId),
+  countExecutions: dbHandler(countExecutions),
 };
 
 export default jobRepository;

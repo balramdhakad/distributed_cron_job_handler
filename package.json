@@ -6,11 +6,13 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "worker": "nodemon src/jobs/worker.js",
-    "sechdular": "node src/sechdular/index.js",
+    "worker": "node src/jobs/worker.js",
+    "worker:dev": "nodemon src/jobs/worker.js",
+    "schedular": "node src/schedular/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:pull": "drizzle-kit pull",
+    "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
   "keywords": [],
